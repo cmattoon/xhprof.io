@@ -38,8 +38,9 @@ $config = array();
 
 if (file_exists(BASE_PATH . '/includes/config.inc.php')) {
     $config	= require BASE_PATH . '/includes/config.inc.php';
+} else {
+    die('XHProf.io is not configured. Check xhprof/includes/config.inc.sample.php');
 }
-
 // Allow to overwrite default configuration in execution environment.
 if (isset($xhprof_config)) {
 	$config = array_merge($config, $xhprof_config);
