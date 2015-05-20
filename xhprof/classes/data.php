@@ -130,12 +130,8 @@ class Data
 	/**
 	 * @param	array	$xhprof_data	The raw XHProf data.
 	 */
-	public function save(array $xhprof_data)
+	public function save(array $xhprof_data, $server)
 	{
-		if(!isset($_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']))
-		{
-			throw new DataException('XHProf.io cannot function in a server environment that does not define REQUEST_METHOD, HTTP_HOST or REQUEST_URI.');
-		}
 		
 		$sth	= $this->db->prepare("
 			(SELECT 'method_id', `id` FROM `request_methods` WHERE `method` = :method LIMIT 1)
@@ -144,7 +140,7 @@ class Data
 			UNION ALL
 			(SELECT 'uri_id', `id` FROM `request_uris` WHERE `uri` = :uri LIMIT 1);");
 		
-		$sth->execute(array('method' => $_SERVER['REQUEST_METHOD'], 'host' => $_SERVER['HTTP_HOST'], 'uri' => $_SERVER['REQUEST_URI']));
+		$sth->execute(array('method' => $server['REQUEST_METHOD'], 'host' => $server['HTTP_HOST'], 'uri' => $server['REQUEST_URI']));
 		
 		$request	= $sth->fetchAll(PDO::FETCH_KEY_PAIR);
 
@@ -152,7 +148,7 @@ class Data
 		{
 			$this->db
 				->prepare("INSERT INTO `request_methods` SET `method` = :method;")
-				->execute(array('method' => $_SERVER['REQUEST_METHOD']));
+				->execute(array('method' => $server['REQUEST_METHOD']));
 		
 			$request['method_id']	= $this->db->lastInsertId();
 		}
@@ -161,7 +157,7 @@ class Data
 		{
 			$this->db
 				->prepare("INSERT INTO `request_hosts` SET `host` = :host;")
-				->execute(array('host' => $_SERVER['HTTP_HOST']));
+				->execute(array('host' => $server['HTTP_HOST']));
 		
 			$request['host_id']		= $this->db->lastInsertId();
 		}
@@ -170,7 +166,7 @@ class Data
 		{
 			$this->db
 				->prepare("INSERT INTO `request_uris` SET `uri` = :uri;")
-				->execute(array('uri' => $_SERVER['REQUEST_URI']));
+				->execute(array('uri' => $server['REQUEST_URI']));
 		
 			$request['uri_id']		= $this->db->lastInsertId();
 		}
@@ -180,7 +176,7 @@ class Data
 		$sth->bindValue(':request_host_id', $request['host_id'], PDO::PARAM_INT);
 		$sth->bindValue(':request_uri_id', $request['uri_id'], PDO::PARAM_INT);
 		$sth->bindValue(':request_method_id', $request['method_id'], PDO::PARAM_INT);
-		$sth->bindValue(':https', empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ? 0 : 1, PDO::PARAM_INT);
+		$sth->bindValue(':https', empty($server['HTTPS']) || $server['HTTPS'] == 'off' ? 0 : 1, PDO::PARAM_INT);
 		
 		$sth->execute();
 		
